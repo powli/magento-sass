@@ -25,9 +25,9 @@ class Laurent_Sass_Helper_Data extends Mage_Core_Helper_Abstract
      * @param callback $afterConvertCallback
      * @throws Exception
      */
-    public function convertToCss($sourceFilename, $targetFilename, $afterConvertCallback = null)
+    public function convertToCss($sourceFilename, $targetFilename, $importFallback = null ,$afterConvertCallback = null)
     {
-        $this->createNewCss($sourceFilename, $targetFilename);
+        $this->createNewCss($sourceFilename, $targetFilename, $importFallback);
 
         if($afterConvertCallback && is_callable($afterConvertCallback)){
             call_user_func($afterConvertCallback, $sourceFilename, $targetFilename);
@@ -40,7 +40,7 @@ class Laurent_Sass_Helper_Data extends Mage_Core_Helper_Abstract
      * @param string $targetFilenamePath
      * @throws Exception
      */
-    public function createNewCss($sourceFilePath, $targetFilenamePath){
+    public function createNewCss($sourceFilePath, $targetFilenamePath, $importFallback = null){
         $config = $this->_getConfig();
         $targetDir = dirname($targetFilenamePath);
         $this->_createDir($targetDir);
@@ -57,26 +57,31 @@ class Laurent_Sass_Helper_Data extends Mage_Core_Helper_Abstract
                 throw new Exception("Error while processing sass file with command '$command':\n" . implode("\n", $output));
             }
         } else {
+            /** @var \Leafo\ScssPhp\Compiler $compiler */
             $compiler = new \Leafo\ScssPhp\Compiler();
             switch ($config['output_style']) {
                 case Laurent_Sass_Model_Config_Style::STYLE_COMPACT:
                 default:
-                    $formatter = 'scss_formatter_crunched';
+                    $formatter = \Leafo\ScssPhp\Formatter\Compact::class;
                     break;
                 case Laurent_Sass_Model_Config_Style::STYLE_NESTED:
-                    $formatter = 'scss_formatter_nested';
+                    $formatter = \Leafo\ScssPhp\Formatter\Nested::class;
                     break;
                 case Laurent_Sass_Model_Config_Style::STYLE_COMPRESSED:
-                    $formatter = 'scss_formatter_compressed';
+                    $formatter = \Leafo\ScssPhp\Formatter\Compressed::class;
                     break;
                 case Laurent_Sass_Model_Config_Style::STYLE_EXPANDED:
-                    $formatter = 'scss_formatter';
+                    $formatter = \Leafo\ScssPhp\Formatter\Expanded::class;
                     break;
+            }
+            if(Mage::getIsDeveloperMode()){
+                $compiler->setLineNumberStyle(Leafo\ScssPhp\Compiler::LINE_COMMENTS);
             }
             $compiler->setFormatter($formatter);
             $compiler->setImportPaths(array (
                 dirname($sourceFilePath),
                 Mage::getBaseDir('lib') . '/scssphp/stylesheets',
+                $importFallback
             ));
 
             file_put_contents($targetFilenamePath, $compiler->compile(sprintf('@import "%s"', basename($sourceFilePath))));

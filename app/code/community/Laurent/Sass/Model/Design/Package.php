@@ -55,7 +55,7 @@ class Laurent_Sass_Model_Design_Package extends Mage_Core_Model_Design_Package
      */
     public function getFilename($file, array $params)
     {
-        $filename = parent::getFilename($file, $params);;
+        $filename = parent::getFilename($file, $params);
 
         if ($this->_isSassFile($file)) {
             try {
@@ -82,6 +82,18 @@ class Laurent_Sass_Model_Design_Package extends Mage_Core_Model_Design_Package
     }
 
     /**
+     * Utilizes theme fallback to improve the compiler scss imports
+     *
+     * @param $file
+     *
+     * @return string
+     */
+    public function importFallbackFunction($file){
+        //@TODO make directory dynamic in some way
+        return parent::getFilename('css'.DS.'_'.$file.'.scss', array('_type' => 'skin'));
+    }
+
+    /**
      * Convert a sass file to css file and return css file name
      * @param $filename
      * @return string compiled filename
@@ -90,7 +102,7 @@ class Laurent_Sass_Model_Design_Package extends Mage_Core_Model_Design_Package
     {
         $sassHelper = Mage::helper('sass');
         $compiledFilename = Mage::getBaseDir('media') . DS . 'sass' . DS . md5($filename) . '.css';
-        $sassHelper->convertToCss($filename, $compiledFilename, array($this, 'afterConvertToCss'));
+        $sassHelper->convertToCss($filename, $compiledFilename, array($this, 'importFallbackFunction'), array($this, 'afterConvertToCss'));
 
         return $compiledFilename;
     }
