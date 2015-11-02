@@ -90,7 +90,12 @@ class Laurent_Sass_Model_Design_Package extends Mage_Core_Model_Design_Package
      */
     public function importFallbackFunction($file){
         //@TODO make directory dynamic in some way
-        return parent::getFilename('css'.DS.'_'.$file.'.scss', array('_type' => 'skin'));
+        $filepath = parent::getFilename('scss'.DS.$file.'.scss', array('_type' => 'skin'));
+
+        if(!$filepath){
+            $filepath = parent::getFilename('scss'.DS.'_'.$file.'.scss', array('_type' => 'skin'));
+        }
+        return $filepath;
     }
 
     /**
